@@ -65,7 +65,8 @@ class _AnaEkranState extends State<AnaEkran> {
     });
 
     try {
-      final url = Uri.parse('http://192.168.1.27:8000/oner?mood=${duygu["id"]}');
+      final String baseUrl = "https://food4mood-api.onrender.com";
+final url = Uri.parse('$baseUrl/oner?mood=${duygu["id"]}');
       final cevap = await http.get(url);
       if (cevap.statusCode == 200) {
         final veri = json.decode(utf8.decode(cevap.bodyBytes));
