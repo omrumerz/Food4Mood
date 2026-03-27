@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() => runApp(const MoodFoodApp());
 
@@ -34,9 +35,35 @@ class _AnaEkranState extends State<AnaEkran> {
   String secilenDuyguIcon = "";
   String secilenDuyguYazi = "";
   Color secilenDuyguRenk = Colors.deepPurple;
-  
   List<dynamic> tarifler = [];
   String ihtiyac = "";
+  
+  List<String> favoriIsimleri = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _favorileriYukle();
+  }
+
+  Future<void> _favorileriYukle() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      favoriIsimleri = prefs.getStringList('favoriler') ?? [];
+    });
+  }
+
+  Future<void> _favoriGuncelle(String tarifAdi) async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      if (favoriIsimleri.contains(tarifAdi)) {
+        favoriIsimleri.remove(tarifAdi);
+      } else {
+        favoriIsimleri.add(tarifAdi);
+      }
+    });
+    await prefs.setStringList('favoriler', favoriIsimleri);
+  }
 
   final List<Map<String, dynamic>> duygular = [
     {"id": "stresli", "label": "Stresli 😫", "renk": 0xFFE57373},
@@ -70,11 +97,8 @@ class _AnaEkranState extends State<AnaEkran> {
         final data = json.decode(utf8.decode(response.bodyBytes));
         _showResultModal(data);
       }
-    } catch (e) {
-      debugPrint("Hata: $e");
-    } finally {
-      setState(() => _loading = false);
-    }
+    } catch (e) { debugPrint("Hata: $e"); }
+    finally { setState(() => _loading = false); }
   }
 
   void _showResultModal(Map<String, dynamic> data) {
@@ -91,28 +115,28 @@ class _AnaEkranState extends State<AnaEkran> {
             children: [
               Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10))),
               const SizedBox(height: 15),
-              Text("Tespit Edilen Mod: ${data['tespit_edilen_duygu'].toUpperCase()}", 
-                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
+              Text("Önerilen Mod: ${data['tespit_edilen_duygu'].toUpperCase()}", 
+                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
               const Divider(),
-              Text("Önerilen: ${info['foods'].join(', ')}", textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
-              const SizedBox(height: 15),
-              const Text("Tarifler (Detay için tıkla):", style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
               Flexible(
                 child: ListView.builder(
                   shrinkWrap: true,
                   itemCount: info['recipes'].length,
                   itemBuilder: (context, index) {
                     final r = info['recipes'][index];
+                    bool isFav = favoriIsimleri.contains(r['name']);
                     return Card(
                       child: ListTile(
                         leading: const Icon(Icons.restaurant, color: Colors.orange),
                         title: Text(r['name']),
-                        subtitle: Text("${r['duration']} • ${r['calories']}"),
-                        trailing: const Icon(Icons.chevron_right),
+                        trailing: Icon(isFav ? Icons.favorite : Icons.favorite_border, color: Colors.red),
                         onTap: () {
-                          Navigator.pop(context); // Modalı kapat
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => TarifDetaySayfasi(tarif: r)));
+                          Navigator.pop(context);
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => TarifDetaySayfasi(
+                            tarif: r, 
+                            isFavorite: isFav,
+                            onFavTap: () => _favoriGuncelle(r['name']),
+                          )));
                         },
                       ),
                     );
@@ -135,7 +159,6 @@ class _AnaEkranState extends State<AnaEkran> {
       secilenDuyguIcon = duygu["label"].split(" ")[1];
       secilenDuyguRenk = Color(duygu["renk"]);
     });
-
     try {
       final response = await http.get(Uri.parse('https://food4mood-api.onrender.com/oner?mood=${duygu["id"]}'));
       if (response.statusCode == 200) {
@@ -145,21 +168,31 @@ class _AnaEkranState extends State<AnaEkran> {
           tarifler = data['recipes'];
         });
       }
-    } catch (e) {
-      debugPrint("Hata: $e");
-    } finally {
-      setState(() => _loading = false);
-    }
+    } catch (e) { debugPrint(e.toString()); }
+    finally { setState(() => _loading = false); }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Food4Mood", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text("Food4Mood", style: TextStyle(fontWeight: FontWeight.bold)), 
         centerTitle: true,
-        elevation: 0,
         backgroundColor: Colors.transparent,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 15.0),
+            child: Center(
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  const Icon(Icons.favorite, color: Colors.red, size: 32),
+                  Text("${favoriIsimleri.length}", style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+          )
+        ],
       ),
       body: secimYapildi ? _tarifListesiEkrani() : _duyguSecimEkrani(),
     );
@@ -171,24 +204,18 @@ class _AnaEkranState extends State<AnaEkran> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                TextField(
-                  controller: _controller,
-                  decoration: InputDecoration(
-                    hintText: "Bugün nasıl hissediyorsun?",
-                    prefixIcon: const Icon(Icons.sentiment_satisfied_alt),
-                    suffixIcon: IconButton(
-                      icon: _loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.auto_awesome),
-                      onPressed: () => analizEt(_controller.text),
-                    ),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
-                    filled: true, fillColor: Colors.white,
-                  ),
+            child: TextField(
+              controller: _controller,
+              decoration: InputDecoration(
+                hintText: "Bugün nasıl hissediyorsun?",
+                prefixIcon: const Icon(Icons.sentiment_satisfied_alt),
+                suffixIcon: IconButton(
+                  icon: _loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.auto_awesome, color: Colors.deepPurple),
+                  onPressed: () => analizEt(_controller.text),
                 ),
-                const SizedBox(height: 20),
-                const Text("Veya bir mod seçin", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey)),
-              ],
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+                filled: true, fillColor: Colors.white,
+              ),
             ),
           ),
           Wrap(
@@ -198,23 +225,22 @@ class _AnaEkranState extends State<AnaEkran> {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(duygu["renk"]),
-                  elevation: 2,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                   padding: EdgeInsets.zero,
+                  elevation: 2,
                 ),
                 onPressed: () => oneriyiGetir(duygu),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(duygu["label"].split(" ")[1], style: const TextStyle(fontSize: 40)),
-                    const SizedBox(height: 4),
-                    Text(duygu["label"].split(" ")[0], style: const TextStyle(fontSize: 11, color: Colors.black87, fontWeight: FontWeight.bold)),
+                    Text(duygu["label"].split(" ")[0], style: const TextStyle(fontSize: 10, color: Colors.black87, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
             )).toList(),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 20),
         ],
       ),
     );
@@ -228,35 +254,37 @@ class _AnaEkranState extends State<AnaEkran> {
           Text(secilenDuyguIcon, style: const TextStyle(fontSize: 60)),
           Text(secilenDuyguYazi, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: secilenDuyguRenk)),
           Text("🔬 İhtiyacın: $ihtiyac", style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.blueGrey)),
-          const Divider(height: 40),
+          const Divider(height: 30),
           Expanded(
             child: _loading 
-              ? const Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                  itemCount: tarifler.length,
-                  itemBuilder: (context, index) {
-                    final t = tarifler[index];
-                    return Card(
-                      elevation: 2,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                        leading: const CircleAvatar(backgroundColor: Colors.orangeAccent, child: Icon(Icons.restaurant_menu, color: Colors.white)),
-                        title: Text(t['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text("${t['duration']} | ${t['calories']}"),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => TarifDetaySayfasi(tarif: t))),
-                      ),
-                    );
-                  },
-                ),
+            ? const Center(child: CircularProgressIndicator())
+            : ListView.builder(
+              itemCount: tarifler.length,
+              itemBuilder: (context, index) {
+                final t = tarifler[index];
+                bool isFav = favoriIsimleri.contains(t['name']);
+                return Card(
+                  elevation: 2,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  child: ListTile(
+                    leading: const CircleAvatar(backgroundColor: Colors.orangeAccent, child: Icon(Icons.restaurant_menu, color: Colors.white)),
+                    title: Text(t['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                    trailing: Icon(isFav ? Icons.favorite : Icons.favorite_border, color: Colors.red),
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => TarifDetaySayfasi(
+                      tarif: t,
+                      isFavorite: isFav,
+                      onFavTap: () => _favoriGuncelle(t['name']),
+                    ))),
+                  ),
+                );
+              },
+            ),
           ),
-          const SizedBox(height: 10),
           TextButton.icon(
             onPressed: () => setState(() => secimYapildi = false), 
-            icon: const Icon(Icons.refresh),
-            label: const Text("Modumu Değiştir"),
+            icon: const Icon(Icons.refresh), 
+            label: const Text("Modumu Değiştir")
           ),
         ],
       ),
@@ -264,14 +292,40 @@ class _AnaEkranState extends State<AnaEkran> {
   }
 }
 
-class TarifDetaySayfasi extends StatelessWidget {
+class TarifDetaySayfasi extends StatefulWidget {
   final Map<String, dynamic> tarif;
-  const TarifDetaySayfasi({super.key, required this.tarif});
+  final bool isFavorite;
+  final VoidCallback onFavTap;
+  const TarifDetaySayfasi({super.key, required this.tarif, required this.isFavorite, required this.onFavTap});
+
+  @override
+  State<TarifDetaySayfasi> createState() => _TarifDetaySayfasiState();
+}
+
+class _TarifDetaySayfasiState extends State<TarifDetaySayfasi> {
+  late bool _isFav;
+
+  @override
+  void initState() {
+    super.initState();
+    _isFav = widget.isFavorite;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(tarif['name']), centerTitle: true),
+      appBar: AppBar(
+        title: Text(widget.tarif['name']),
+        actions: [
+          IconButton(
+            icon: Icon(_isFav ? Icons.favorite : Icons.favorite_border, color: Colors.red),
+            onPressed: () {
+              setState(() => _isFav = !_isFav);
+              widget.onFavTap();
+            },
+          )
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -280,8 +334,8 @@ class TarifDetaySayfasi extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _infoChip(Icons.access_time_rounded, "Süre", tarif['duration'], Colors.blue),
-                _infoChip(Icons.local_fire_department_rounded, "Enerji", tarif['calories'], Colors.orange),
+                _infoChip(Icons.access_time_rounded, "Süre", widget.tarif['duration'], Colors.blue),
+                _infoChip(Icons.local_fire_department_rounded, "Enerji", widget.tarif['calories'], Colors.orange),
               ],
             ),
             const SizedBox(height: 35),
@@ -301,11 +355,11 @@ class TarifDetaySayfasi extends StatelessWidget {
                 boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
               ),
               child: Text(
-                tarif['steps'], 
+                widget.tarif['steps'], 
                 style: const TextStyle(fontSize: 16, height: 1.7, color: Colors.black87),
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 30),
             SizedBox(
               width: double.infinity,
               height: 55,
