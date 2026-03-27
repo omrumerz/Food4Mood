@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from textblob import TextBlob
 
 app = FastAPI()
 
-# Tarayıcı erişimi için CORS ayarları
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,222 +16,102 @@ besin_verileri = {
     "stresli": {
         "nutrient": "Magnezyum ve B6 Vitamini",
         "foods": ["Bitter Çikolata", "Kabak Çekirdeği", "Ispanak"],
-        "recipes": [
-            "1. Magnezyum Smoothie: Ispanak, muz ve badem sütünü karıştırın.",
-            "2. Çıtır Atıştırmalık: Kabak çekirdeklerini az tuzla kavurun.",
-            "3. Bitter Keyfi: 3 kare bitter çikolata ve yanında papatya çayı.",
-            "4. Yeşil Salata: Bol ıspanaklı, cevizli ve limonlu bir kase hazırlayın.",
-            "5. Rahatlatıcı Çay: Melisa otu demleyip içine bal ekleyin."
-        ]
+        "recipes": ["1. Magnezyum Smoothie", "2. Kabak Çekirdeği Kavurma", "3. Bitter ve Papatya Çayı", "4. Ispanak Salatası", "5. Melisa Çayı"]
     },
     "mutlu": {
         "nutrient": "Serotonin ve Omega-3",
         "foods": ["Muz", "Ceviz", "Somon"],
-        "recipes": [
-            "1. Mutluluk Kasesi: Yoğurt, dilimlenmiş muz ve ceviz karışımı.",
-            "2. Omega Izgara: Fırında somon balığı ve yanında kuşkonmaz.",
-            "3. Enerji Topları: Ezilmiş muz ve yulafı yuvarlayıp dondurun.",
-            "4. Günaydın Tabağı: Tam buğday ekmeği üzerine ceviz ezmesi.",
-            "5. Tropikal İçecek: Taze sıkılmış portakal ve muz karışımı."
-        ]
+        "recipes": ["1. Mutluluk Kasesi", "2. Izgara Somon", "3. Muzlu Yulaf Topları", "4. Ceviz Ezmeli Ekmek", "5. Muzlu Portakal Suyu"]
     },
     "yorgun": {
         "nutrient": "Demir ve Kompleks Karbonhidratlar",
         "foods": ["Yulaf", "Kırmızı Et", "Pekmez"],
-        "recipes": [
-            "1. Güç Kahvaltısı: Sütlü yulaf lapası içine 1 kaşık pekmez.",
-            "2. Demir Deposu: Yağsız ızgara biftek ve bol yeşil salata.",
-            "3. Enerji İksiri: Bir bardak ılık suya pekmez ve limon ekleyin.",
-            "4. Baklagil Gücü: Mercimek salatası ve yanında tam tahıllı ekmek.",
-            "5. Atıştırmalık: Gün kurusu kayısı ve çiğ badem tüketin."
-        ]
+        "recipes": ["1. Pekmezli Yulaf", "2. Izgara Biftek", "3. Pekmezli Ilık Su", "4. Mercimek Salatası", "5. Gün Kurusu ve Badem"]
     },
     "uzgun": {
         "nutrient": "D Vitamini ve Triptofan",
         "foods": ["Yumurta", "Hindi Eti", "Süt"],
-        "recipes": [
-            "1. Sebzeli Omlet: 2 yumurta ve bol mevsim sebzesiyle pişirin.",
-            "2. Hindi Çorbası: Sebzeli ve şehriyeli sıcak hindi çorbası.",
-            "3. Gece İçeceği: Tarçınlı ve ballı sıcak süt için.",
-            "4. Güneş Salatası: Haşlanmış yumurtalı ton balıklı salata.",
-            "5. Meyve Tabağı: Çilek ve ananas dilimleriyle moral depolayın."
-        ]
+        "recipes": ["1. Sebzeli Omlet", "2. Hindi Çorbası", "3. Ballı Sıcak Süt", "4. Yumurtalı Ton Balığı", "5. Çilekli Meyve Tabağı"]
     },
     "sinirli": {
         "nutrient": "Potasyum ve C Vitamini",
         "foods": ["Patates", "Portakal", "Kereviz"],
-        "recipes": [
-            "1. Sakinleştirici Patates: Haşlanmış patates üzerine zeytinyağı ve biberiye.",
-            "2. Vitamin Bombası: Taze sıkılmış portakal ve havuç suyu.",
-            "3. Detoks Suyu: Kereviz sapı, elma ve limonu blenderdan geçirin.",
-            "4. Hafif Öğün: Zeytinyağlı kereviz yemeği ve yanında cacık.",
-            "5. Çıtır Sebze: Havuç ve salatalık dilimlerini yoğurt sosla yiyin."
-        ]
+        "recipes": ["1. Zeytinyağlı Patates", "2. Portakal Havuç Suyu", "3. Kereviz Detoksu", "4. Zeytinyağlı Kereviz", "5. Yoğurtlu Havuç"]
     },
     "heyecanli": {
         "nutrient": "Kalsiyum ve Dengeli Şeker",
         "foods": ["Yoğurt", "Badem", "Kefir"],
-        "recipes": [
-            "1. Bademli Yoğurt: Süzme yoğurt içine çiğ badem ve yaban mersini.",
-            "2. Probiyotik İçecek: Çilekli ev yapımı kefir hazırlayın.",
-            "3. Dengeleyici Puding: Chia tohumu ve sütü geceden bekletin.",
-            "4. Kuruyemiş Karışımı: Badem, fındık ve kuru üzüm tüketin.",
-            "5. Hafif Akşam: Lor peynirli ve domatesli salata yapın."
-        ]
+        "recipes": ["1. Bademli Yoğurt", "2. Çilekli Kefir", "3. Chia Puding", "4. Kuru Üzüm ve Badem", "5. Lorlu Domates Salatası"]
     },
     "kaygili": {
         "nutrient": "L-theanine ve Antioksidanlar",
         "foods": ["Yeşil Çay", "Kuşkonmaz", "Yaban Mersini"],
-        "recipes": [
-            "1. Yatıştırıcı Çay: Taze demlenmiş yeşil çay ve içine bir dilim limon.",
-            "2. Yeşil Izgara: Zeytinyağlı haşlanmış kuşkonmaz tabağı.",
-            "3. Antioksidan Kase: Yoğurt üzerine taze yaban mersini ekleyin.",
-            "4. Beyin Dostu: Bir avuç çiğ kaju fıstığı tüketin.",
-            "5. Buharda Sebze: Brokoli ve karnabahar üzerine sarımsaklı yoğurt."
-        ]
+        "recipes": ["1. Limonlu Yeşil Çay", "2. Izgara Kuşkonmaz", "3. Yaban Mersinli Yoğurt", "4. Çiğ Kaju", "5. Buharda Brokoli"]
     },
     "uykulu": {
         "nutrient": "Tyrosine ve Hafif Kafein",
         "foods": ["Kahve", "Sert Peynir", "Tam Buğday"],
-        "recipes": [
-            "1. Ayıltıcı Kahve: Şekersiz bir fincan filtre kahve için.",
-            "2. Enerji Sandviçi: Tam buğday ekmeğine kaşar peyniri ve domates.",
-            "3. Canlandırıcı Su: Buzlu suyun içine nane ve salatalık dilimleyin.",
-            "4. Atıştırmalık: 2 adet ceviz ve 1 dilim eski peynir.",
-            "5. Protein Kahvaltısı: Haşlanmış yumurta ve bol maydanoz."
-        ]
+        "recipes": ["1. Filtre Kahve", "2. Peynirli Sandviç", "3. Naneli Buzlu Su", "4. Eski Peynir ve Ceviz", "5. Yumurtalı Kahvaltı"]
     },
     "yalniz": {
         "nutrient": "Rahatlatıcı Karbonhidratlar",
         "foods": ["Makarna", "Sıcak Çikolata", "Mısır"],
-        "recipes": [
-            "1. Sevgi Makarnası: Domates soslu ve peynirli tam buğday makarna.",
-            "2. Sıcak Keyif: Az şekerli, bol kakaolu sıcak çikolata.",
-            "3. Ev Sineması: Az yağlı patlamış mısır hazırlayın.",
-            "4. Fırın Lezzeti: Ekmek üstü peynir ve kekikli fırın dilimleri.",
-            "5. Tatlı Teselli: Fırınlanmış tarçınlı elma dilimleri."
-        ]
+        "recipes": ["1. Domatesli Makarna", "2. Sıcak Çikolata", "3. Patlamış Mısır", "4. Fırın Peynirli Ekmek", "5. Tarçınlı Elma"]
     },
     "enerjik": {
         "nutrient": "Sürdürülebilir Enerji ve Protein",
         "foods": ["Kinoa", "Fıstık Ezmesi", "Chia"],
-        "recipes": [
-            "1. Süper Salata: Kinoa, nar ve maydanozlu renkli salata.",
-            "2. Enerji Tostu: Elma dilimleri üzerine fıstık ezmesi sürün.",
-            "3. Chia Puding: Hindistan cevizi sütü ve chia tohumu karışımı.",
-            "4. Sporcu İçeceği: Muz, süt ve bir kaşık fıstık ezmesi smoothie.",
-            "5. Tahıl Günü: Haşlanmış karabuğday ve sebze sote."
-        ]
+        "recipes": ["1. Narlı Kinoa Salatası", "2. Fıstık Ezmeli Elma", "3. Chia Puding", "4. Muzlu Smoothie", "5. Karabuğday Sote"]
     },
     "odaklanmis": {
         "nutrient": "Antosiyanin ve Flavonoidler",
         "foods": ["Yaban Mersini", "Ceviz", "Biberiye"],
-        "recipes": [
-            "1. Zihin Açıcı Omlet: Taze biberiyeli ve peynirli omlet.",
-            "2. Beyin Kasesi: Yaban mersini, ceviz ve yulaf karışımı.",
-            "3. Odak Çayı: Biberiye ve limonu sıcak suda demleyin.",
-            "4. Omega Salatası: Semizotu, ceviz ve nar ekşili salata.",
-            "5. Akıllı Atıştırmalık: Bitter çikolata kaplı yaban mersini."
-        ]
+        "recipes": ["1. Biberiyeli Omlet", "2. Zihin Kasesi", "3. Biberiye Çayı", "4. Semizotu Salatası", "5. Bitterli Yaban Mersini"]
     },
     "saskin": {
         "nutrient": "C Vitamini ve Glikoz Dengesi",
         "foods": ["Kivi", "Kırmızı Biber", "Çilek"],
-        "recipes": [
-            "1. Renkli Tabak: Dilimlenmiş kivi, çilek ve ananas kasesi.",
-            "2. Vitamin Sote: Kırmızı biberli ve mantarlı hızlı sote.",
-            "3. Şaşırtıcı Smoothie: Kivi, ıspanak ve elma suyunu karıştırın.",
-            "4. Çilekli Yoğurt: Ev yapımı yoğurt içine taze çilek dilimleri.",
-            "5. Serinletici: Çilekli ve naneli soğuk çay hazırlayın."
-        ]
+        "recipes": ["1. Renkli Meyve Tabağı", "2. Biberli Mantar Sote", "3. Kivi Smoothie", "4. Çilekli Yoğurt", "5. Naneli Çilek Çayı"]
     },
     "huzurlu": {
         "nutrient": "Apigenin ve Linalool",
         "foods": ["Papatya", "Kereviz", "Bal"],
-        "recipes": [
-            "1. Huzur Çayı: Papatya ve lavanta karışımı bitki çayı.",
-            "2. Hafif Başlangıç: Kereviz saplarını labne peynirine batırıp yiyin.",
-            "3. Tatlı Rüya: Bir kaşık süzme bal eklenmiş ılık papatya çayı.",
-            "4. Sakin Öğün: Zeytinyağlı kereviz yemeği ve bol yoğurt.",
-            "5. Yeşil İçecek: Salatalık, nane ve kereviz sapı suyu."
-        ]
+        "recipes": ["1. Lavantalı Papatya Çayı", "2. Labneli Kereviz Sapı", "3. Ballı Papatya Çayı", "4. Zeytinyağlı Kereviz", "5. Naneli Salatalık Suyu"]
     },
     "keyifsiz": {
         "nutrient": "Folat ve Magnezyum",
         "foods": ["Mercimek", "Avokado", "Kuşkonmaz"],
-        "recipes": [
-            "1. Canlandırıcı Çorba: Bol baharatlı sarı mercimek çorbası.",
-            "2. Avokado Tost: Tam tahıllı ekmek üzerine ezilmiş avokado ve pul biber.",
-            "3. Yeşil Güç: Izgara kuşkonmaz ve yanında haşlanmış yumurta.",
-            "4. Keyif Salatası: Avokadolu ve domatesli mısır salatası.",
-            "5. Enerji Lokması: Kuru incir içine ceviz yerleştirip tüketin."
-        ]
+        "recipes": ["1. Mercimek Çorbası", "2. Avokado Tost", "3. Kuşkonmaz ve Yumurta", "4. Avokadolu Mısır Salatası", "5. Cevizli Kuru İncir"]
     },
     "sabirsiz": {
         "nutrient": "B Kompleks Vitaminleri",
         "foods": ["Tam Tahıl", "Fıstık Ezmesi", "Süt"],
-        "recipes": [
-            "1. Hızlı Kahvaltı: Tam tahıllı bisküvi ve bir bardak süt.",
-            "2. Sabır Atıştırmalığı: Elma dilimleri ve fıstık ezmesi keyfi.",
-            "3. Sakinleştirici Süt: İçine tarçın çubuğu atılmış ılık süt.",
-            "4. Pratik Dürüm: Lavaş içine fıstık ezmesi ve muz dilimleri.",
-            "5. Tahıl Bar: Ev yapımı yulaflı ve ballı bar."
-        ]
+        "recipes": ["1. Tahıllı Bisküvi ve Süt", "2. Fıstık Ezmeli Elma", "3. Tarçınlı Ilık Süt", "4. Muzlu Lavaş Dürüm", "5. Yulaflı Bar"]
     },
     "utangac": {
         "nutrient": "Çinko ve Selenyum",
         "foods": ["Kabak Çekirdeği", "Kaju", "Mantar"],
-        "recipes": [
-            "1. Mantar Ziyafeti: Fırında kaşarlı mantar dolması.",
-            "2. Çinko Deposu: Bir avuç dolusu çiğ kabak çekirdeği.",
-            "3. Kaju Salatası: Roka tabağı üzerine kavrulmuş kaju ekleyin.",
-            "4. Mantarlı Omlet: İstiridye mantarlı ve bol maydanozlu omlet.",
-            "5. Çıtır Karışım: Kaju ve fındığı tavada hafifçe ısıtın."
-        ]
+        "recipes": ["1. Kaşarlı Mantar Dolması", "2. Kabak Çekirdeği", "3. Kajulu Roka Salatası", "4. Mantarlı Omlet", "5. Tavada Kaju"]
     },
     "gururlu": {
         "nutrient": "Yüksek Protein",
         "foods": ["Tavuk Göğsü", "Süzme Yoğurt", "Lor Peyniri"],
-        "recipes": [
-            "1. Başarı Tabağı: Izgara tavuk göğsü ve yanında haşlanmış brokoli.",
-            "2. Protein Kasesi: Süzme yoğurt, lor peyniri ve taze meyve.",
-            "3. Şampiyon Sandviçi: Tavuklu ve avokadolu tam buğday sandviç.",
-            "4. Lor Salatası: Lor peyniri, çörek otu ve zeytinyağlı tabak.",
-            "5. Fit Smoothie: Süzme yoğurt, çilek ve bir ölçek protein tozu (isteğe bağlı)."
-        ]
+        "recipes": ["1. Izgara Tavuk", "2. Meyveli Süzme Yoğurt", "3. Tavuklu Sandviç", "4. Lorlu Çörek Otlu Tabak", "5. Çilekli Fit Smoothie"]
     },
     "tedirgin": {
         "nutrient": "Omega-3 Yağ Asitleri",
         "foods": ["Somon", "Semizotu", "Keten Tohumu"],
-        "recipes": [
-            "1. Tedirginlik Savar: Yoğurt içine 1 kaşık keten tohumu ekleyin.",
-            "2. Hafif Akşam: Zeytinyağlı sarımsaklı semizotu yemeği.",
-            "3. Fırın Somon: Defne yapraklı fırın somon ve roka salatası.",
-            "4. Tohum Salatası: Keten tohumlu ve narlı semizotu salatası.",
-            "5. Balık Çorbası: Sebzeli ve bol limonlu sıcak balık çorbası."
-        ]
+        "recipes": ["1. Keten Tohumlu Yoğurt", "2. Sarımsaklı Semizotu", "3. Fırın Somon", "4. Narlı Semizotu Salatası", "5. Balık Çorbası"]
     },
     "cesur": {
         "nutrient": "Kapsaisin ve Demir",
         "foods": ["Acı Biber", "Kırmızı Et", "Pekmez"],
-        "recipes": [
-            "1. Ateşli Sote: Acı biberli ve kekikli kırmızı et sote.",
-            "2. Cesaret İksiri: Tahin ve pekmez karışımı yanında ceviz.",
-            "3. Baharatlı Izgara: Acı pul biberli ızgara köfte tabağı.",
-            "4. Enerji Bombası: Pekmezli ve yulaflı kurabiye.",
-            "5. Acı Soslu Sebze: Meksika fasulyeli ve acı soslu sebze karışımı."
-        ]
+        "recipes": ["1. Acılı Et Sote", "2. Tahin Pekmez ve Ceviz", "3. Acılı Köfte", "4. Pekmezli Kurabiye", "5. Meksika Fasulyeli Sote"]
     },
     "kararsiz": {
         "nutrient": "Kan Şekeri Dengeleyiciler",
         "foods": ["Tarçın", "Elma", "Badem"],
-        "recipes": [
-            "1. Net Karar: Tarçın serpilmiş fırınlanmış elma dilimleri.",
-            "2. Denge Kasesi: Elma rendesi, yoğurt ve bol tarçın.",
-            "3. Atıştırmalık: Bir adet yeşil elma ve yanında 10 adet badem.",
-            "4. Karar Çayı: Tarçın çubuğu ve elma kabuklu bitki çayı.",
-            "5. Bademli Hurma: İçi badem dolu 3 adet hurma tüketin."
-        ]
+        "recipes": ["1. Tarçınlı Fırın Elma", "2. Tarçınlı Elma Rendesi", "3. Elma ve Badem", "4. Tarçınlı Elma Çayı", "5. Bademli Hurma"]
     }
 }
 
@@ -239,3 +119,40 @@ besin_verileri = {
 def oner(mood: str):
     mood = mood.lower()
     return besin_verileri.get(mood, {"error": "Duygu bulunamadı"})
+
+@app.get("/analiz")
+def duygu_analizi(metin: str):
+    analiz = TextBlob(metin)
+    puan = analiz.sentiment.polarity
+    metin_lower = metin.lower()
+    
+    # Türkçe anahtar kelime eşleştirme mantığı
+    if any(k in metin_lower for k in ["yorgun", "bitkin", "halsiz"]):
+        duygu = "yorgun"
+    elif any(k in metin_lower for k in ["stres", "gergin", "baskı"]):
+        duygu = "stresli"
+    elif any(k in metin_lower for k in ["üzgün", "kötü", "ağlamak"]):
+        duygu = "uzgun"
+    elif any(k in metin_lower for k in ["mutlu", "iyi", "harika"]):
+        duygu = "mutlu"
+    elif any(k in metin_lower for k in ["kızgın", "sinirli", "öfke"]):
+        duygu = "sinirli"
+    elif any(k in metin_lower for k in ["heyecan", "sabırsız"]):
+        duygu = "heyecanli"
+    elif any(k in metin_lower for k in ["yalnız", "tek başıma"]):
+        duygu = "yalniz"
+    elif any(k in metin_lower for k in ["korku", "kaygı", "endişe"]):
+        duygu = "kaygili"
+    else:
+        # Puanlama sistemine göre karar ver
+        if puan > 0.2: duygu = "mutlu"
+        elif puan < -0.2: duygu = "uzgun"
+        else: duygu = "huzurlu"
+
+    sonuc = besin_verileri.get(duygu, besin_verileri["huzurlu"])
+    
+    return {
+        "tespit_edilen_duygu": duygu,
+        "puan": puan,
+        "besin_bilgisi": sonuc
+    }
